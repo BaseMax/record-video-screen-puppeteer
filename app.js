@@ -5,37 +5,37 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     const browser = await puppeteer.launch();
     const width = 1280;
     const height = 720;
-    const zoom = 1;
+    const scale = 1;
 
     const browserWSEndpoint = browser.wsEndpoint();
     const browserContext = await browser.createIncognitoBrowserContext();
     const page = await browserContext.newPage();
-    // const session = await page.target().createCDPSession();
-    await page.setViewport({ width, height, zoom });
+    await page.setViewport({
+        width: width,
+        height: height,
+        deviceScaleFactor: scale
+    });
 
     const recorder = new PuppeteerScreenRecorder(page);
-    await recorder.start('./simple.mp4'); // supports extension - mp4, avi, webm and mov
-    await page.goto('https://google.com');
-
     await page.goto('https://asrez.ir');
+    // Wait to complete load
+    await page.waitForSelector('body');
+    // Start recording
+    await recorder.start('./simple.mp4'); // supports extension - mp4, avi, webm and mov
+    // Get the height of the rendered page
+    const pageHeight = await page.evaluate(() => document.body.scrollHeight);
+    console.log("Page height: ", pageHeight);
 
-    // Auto-scroll after every 2s
-    await page.evaluate(async () => {
-        await new Promise((resolve, reject) => {
-            var totalHeight = 0;
-            var distance = 100;
-            var timer = setInterval(() => {
-                var scrollHeight = document.body.scrollHeight;
-                window.scrollBy(0, distance);
-                totalHeight += distance;
-            }, 2000);
-            setTimeout(() => {
-                clearInterval(timer);
-                resolve();
-            }, 5000);
-        });
-    });
-    await page.waitFor(5000);
+    // Smooth scroll to the bottom of the page
+    let currentPosition = 0;
+    while (currentPosition < pageHeight) {
+        const nextPosition = Math.min(currentPosition + height, pageHeight);
+        await page.evaluate(_scrollTo => {
+            window.scrollTo(0, _scrollTo);
+        }, nextPosition);
+        currentPosition = nextPosition;
+        await page.waitForTimeout(300);
+    }
 
     await recorder.stop();
     await browser.close();
