@@ -8,7 +8,7 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     const width = 1372;
     const height = 819;
     const scale = 1;
-    const recordFile = "./simple.mp4";
+    const recordFile = "./screen.mp4";
 
     const browserContext = await browser.createIncognitoBrowserContext();
     const page = await browserContext.newPage();
