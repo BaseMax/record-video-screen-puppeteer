@@ -25,6 +25,25 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     await page.goto('https://google.com');
 
     await page.goto('https://asrez.ir');
+
+    // Auto-scroll after every 2s
+    await page.evaluate(async () => {
+        await new Promise((resolve, reject) => {
+            var totalHeight = 0;
+            var distance = 100;
+            var timer = setInterval(() => {
+                var scrollHeight = document.body.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+            }, 2000);
+            setTimeout(() => {
+                clearInterval(timer);
+                resolve();
+            }, 5000);
+        });
+    });
+    await page.waitFor(5000);
+
     await recorder.stop();
     await browser.close();
 })();
