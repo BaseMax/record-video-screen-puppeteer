@@ -17,24 +17,27 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     });
 
     const recorder = new PuppeteerScreenRecorder(page);
-    await page.goto('https://asrez.ir');
+    // await page.goto('https://asrez.ir');
+    await page.goto('https://digikala.com');
     // Wait to complete load
     await page.waitForSelector('body');
-    // Start recording
-    await recorder.start('./simple.mp4'); // supports extension - mp4, avi, webm and mov
     // Get the height of the rendered page
     const pageHeight = await page.evaluate(() => document.body.scrollHeight);
     console.log("Page height: ", pageHeight);
+    // Start recording
+    await recorder.start('./simple.mp4'); // supports extension - mp4, avi, webm and mov
+    // wait 3s
+    await page.waitForTimeout(3000);
 
     // Smooth scroll to the bottom of the page
     let currentPosition = 0;
     while (currentPosition < pageHeight) {
-        const nextPosition = Math.min(currentPosition + height, pageHeight);
+        const nextPosition = Math.min(currentPosition + height / 60, pageHeight);
         await page.evaluate(_scrollTo => {
             window.scrollTo(0, _scrollTo);
         }, nextPosition);
         currentPosition = nextPosition;
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(30);
     }
 
     await recorder.stop();
