@@ -46,15 +46,16 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     // Smooth scroll to the bottom of the page
     let currentPosition = 0;
     while (currentPosition < pageHeight) {
-        const nextPosition = Math.min(currentPosition + height / 40, pageHeight);
+        const nextPosition = Math.min(currentPosition + height / 70, pageHeight);
         await page.evaluate(_scrollTo => {
             window.scrollTo(0, _scrollTo);
         }, nextPosition);
         currentPosition = nextPosition;
-        await page.waitForTimeout(10);
+        await page.waitForTimeout(5);
     }
 
     // Detect if the page is same and CSS animation finished
+    // TODO
 
     await recorder.stop();
     await browser.close();
@@ -65,8 +66,8 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
         // check file size is greater than 0
         const stats = fs.statSync(recordFile);
         const fileSizeInBytes = stats.size;
-        if (fileSizeInBytes > 0) {
-            console.log("Video file size is greater than 0");
+        if (fileSizeInBytes > 50) {
+            console.log("Start to compress the video");
             // Run ffmpeg to compress the video
             // ffmpeg -i "1.mp4" -vcodec libx264 -crf 32 2.mp4
             const command = ffmpeg(recordFile)
@@ -83,12 +84,12 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
                     console.log('An error occurred: ' + err.message);
                 })
                 .on('end', function () {
-                    console.log('Processing finished !');
+                    console.log('Processing finished!');
                 })
                 .save(recordFile.replace('.mp4', '-compressed.mp4'));
         }
         else {
-            console.log("Video file size is 0");
+            console.log("Video file size is less than 50 bytes");
         }
     } else {
         console.log("Video file not created");
