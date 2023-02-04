@@ -10,15 +10,8 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     const browserWSEndpoint = browser.wsEndpoint();
     const browserContext = await browser.createIncognitoBrowserContext();
     const page = await browserContext.newPage();
-    await page.setViewport({ width, height });
-    await page._client.send('Emulation.clearDeviceMetricsOverride');
-    await page._client.send('Emulation.setDeviceMetricsOverride', {
-        width,
-        height,
-        deviceScaleFactor: zoom,
-        mobile: false,
-        fitWindow: false,
-    });
+    // const session = await page.target().createCDPSession();
+    await page.setViewport({ width, height, zoom });
 
     const recorder = new PuppeteerScreenRecorder(page);
     await recorder.start('./simple.mp4'); // supports extension - mp4, avi, webm and mov
