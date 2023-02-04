@@ -1,4 +1,6 @@
+const fs = require('fs');
 const puppeteer = require('puppeteer');
+const ffmpeg = require('fluent-ffmpeg');
 const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
 
 (async () => {
@@ -6,8 +8,8 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     const width = 1372;
     const height = 819;
     const scale = 1;
+    const recordFile = "./simple.mp4";
 
-    const browserWSEndpoint = browser.wsEndpoint();
     const browserContext = await browser.createIncognitoBrowserContext();
     const page = await browserContext.newPage();
     await page.setViewport({
@@ -25,11 +27,21 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
     await page.waitForSelector('body');
     // wait 1s
     await page.waitForTimeout(1000);
+    // A quick scroll to the bottom of the page
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    // wait 1s
+    await page.waitForTimeout(1000);
+    // Again scroll to the top of the page
+    await page.evaluate(() => window.scrollTo(0, 0));
+    // wait 1s
+    await page.waitForTimeout(1000);
     // Get the height of the rendered page
     const pageHeight = await page.evaluate(() => document.body.scrollHeight);
     console.log("Page height: ", pageHeight);
     // Start recording
-    await recorder.start('./simple.mp4'); // supports extension - mp4, avi, webm and mov
+    await recorder.start(recordFile); // supports extension - mp4, avi, webm and mov
+    // wait 3s
+    await page.waitForTimeout(3000);
 
     // Smooth scroll to the bottom of the page
     let currentPosition = 0;
@@ -39,9 +51,46 @@ const { PuppeteerScreenRecorder } = require('puppeteer-screen-recorder');
             window.scrollTo(0, _scrollTo);
         }, nextPosition);
         currentPosition = nextPosition;
-        await page.waitForTimeout(30);
+        await page.waitForTimeout(10);
     }
+
+    // Detect if the page is same and CSS animation finished
 
     await recorder.stop();
     await browser.close();
+
+    // Check `record_file` exists or not
+    if (fs.existsSync(recordFile)) {
+        console.log("Video file created successfully");
+        // check file size is greater than 0
+        const stats = fs.statSync(recordFile);
+        const fileSizeInBytes = stats.size;
+        if (fileSizeInBytes > 0) {
+            console.log("Video file size is greater than 0");
+            // Run ffmpeg to compress the video
+            // ffmpeg -i "1.mp4" -vcodec libx264 -crf 32 2.mp4
+            const command = ffmpeg(recordFile)
+                .videoCodec('libx264')
+                .videoBitrate('1000k')
+                .audioCodec('libmp3lame')
+                .audioBitrate('128k')
+                .outputOptions([
+                    '-crf 32',
+                    '-preset ultrafast',
+                    '-movflags faststart'
+                ])
+                .on('error', function (err) {
+                    console.log('An error occurred: ' + err.message);
+                })
+                .on('end', function () {
+                    console.log('Processing finished !');
+                })
+                .save(recordFile.replace('.mp4', '-compressed.mp4'));
+        }
+        else {
+            console.log("Video file size is 0");
+        }
+    } else {
+        console.log("Video file not created");
+    }
 })();
