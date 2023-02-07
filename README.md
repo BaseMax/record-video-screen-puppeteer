@@ -6,7 +6,7 @@ This is a simple example of how to record a video of a web page by **Puppeteer**
 
 ```bash
 $ npm install
-$ npm app.js
+$ node app.js
 ```
 
 ## License
